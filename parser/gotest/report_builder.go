@@ -1,6 +1,7 @@
 package gotest
 
 import (
+	"strings"
 	"time"
 
 	"github.com/jstemmer/go-junit-report/v2/gtr"
@@ -168,6 +169,29 @@ func (b *reportBuilder) CreateBuildError(packageName string) {
 // package contains all the build errors, output, tests and benchmarks created
 // so far. Afterwards all state is reset.
 func (b *reportBuilder) CreatePackage(name, result string, duration time.Duration, data string) {
+
+	parentsSet := make(map[int]int)
+	for _, test := range b.tests {
+		if strings.Contains(test.Name, "/") {
+			parentId := b.findTest(test.Name[:strings.Index(test.Name,"/")])
+			parentsSet[parentId] = parentId
+
+			newTest := gtr.Test{
+				Name:     test.Name,
+				Duration: test.Duration,
+				Result:   test.Result,
+				Level:    test.Level,
+				Output:   append(b.tests[parentId].Output, test.Output...),
+			}
+			b.tests[b.findTest(test.Name)] = newTest
+		}
+	}
+
+	for _, parentId := range parentsSet {
+		delete(b.tests, parentId)
+	}
+
+
 	pkg := gtr.Package{
 		Name:     name,
 		Duration: duration,

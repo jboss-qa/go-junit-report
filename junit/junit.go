@@ -5,6 +5,7 @@ package junit
 import (
 	"encoding/xml"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -258,8 +259,12 @@ func formatBenchmarkTime(d time.Duration) string {
 // the lines.
 func formatOutput(output []string, indent int) string {
 	var lines []string
+	nonAscii := regexp.MustCompile("(^[:ascii:]|\u001B)")
 	for _, line := range output {
+		// remove non-asci characters
+		line = nonAscii.ReplaceAllString(line, "")
 		lines = append(lines, gtr.TrimPrefixSpaces(line, indent))
+
 	}
 	return strings.Join(lines, "\n")
 }
